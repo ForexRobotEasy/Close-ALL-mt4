@@ -1,0 +1,95 @@
+mql5
+//+------------------------------------------------------------------+
+//|                                  Close ALL mt4                  |
+//|                  https://forexroboteasy.com                       |
+//|                          Forex Robot Easy Team                    |
+//+------------------------------------------------------------------+
+
+// One-Click Order Closure
+void CloseAllOrders()
+{
+   int total = OrdersTotal();
+   for(int i = total-1; i >= 0; i--)
+   {
+      if(OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+      {
+         if(OrderClose(OrderTicket(), OrderLots(), MarketInfo(OrderSymbol(), MODE_BID), 0, clrRed))
+            i++;
+      }
+   }
+}
+
+// External Panel with Convenient Buttons
+class CButton
+{
+   string m_text;
+   int m_x, m_y, m_width, m_height;
+   color m_color;
+   bool m_clicked;
+
+   CButton(string text, int x, int y, int width, int height, color color)
+   {
+      m_text = text;
+      m_x = x;
+      m_y = y;
+      m_width = width;
+      m_height = height;
+      m_color = color;
+      m_clicked = false;
+   }
+
+   void Draw()
+   {
+      if(Button(m_text, m_x, m_y, m_width, m_height))
+         m_clicked = true;
+      else
+         m_clicked = false;
+   }
+}
+
+void OnChartEvent(const int id, const long& lparam, const double& dparam, const string& sparam)
+{
+   if(id == CHARTEVENT_OBJECT_CLICK)
+   {
+      CButton buttonCloseByFilter('Close by Filter', 50, 50, 100, 30, clrGreen);
+      CButton buttonCloseAll('Close ALL', 50, 100, 100, 30, clrRed);
+
+      buttonCloseByFilter.Draw();
+      buttonCloseAll.Draw();
+
+      if(buttonCloseByFilter.m_clicked)
+         CloseByFilter();
+
+      if(buttonCloseAll.m_clicked)
+         CloseAllOrders();
+   }
+}
+
+// Customizable Profit and Loss Settings
+void CloseByFilter()
+{
+   double profitValue = 100.0; // customizable profit value
+   double lossValue = -50.0;  // customizable loss value
+
+   int total = OrdersTotal();
+   for(int i = total-1; i >= 0; i--)
+   {
+      if(OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+      {
+         if(OrderProfit() >= profitValue || OrderProfit() <= lossValue)
+         {
+            if(OrderClose(OrderTicket(), OrderLots(), MarketInfo(OrderSymbol(), MODE_BID), 0, clrRed))
+               i++;
+         }
+      }
+   }
+}
+
+// Scheduled Closing Option
+void OnTick()
+{
+   if(TimeHour(TimeCurrent()) == 18 && TimeMinute(TimeCurrent()) == 0)
+      CloseAllOrders();
+}
+
+//+------------------------------------------------------------------+
